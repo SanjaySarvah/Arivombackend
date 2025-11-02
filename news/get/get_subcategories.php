@@ -51,13 +51,56 @@ $result = $stmt->get_result();
 $subcategories = [];
 
 while ($row = $result->fetch_assoc()) {
+    $subcategory_id = (int)$row["id"];
+
+    // Fetch related news for each subcategory
+    $news_sql = "SELECT 
+                    id,
+                    category_id,
+                    subcategory_id,
+                    title,
+                    tname,
+                    excerpt,
+                    content,
+                    image,
+                    author,
+                    slug,
+                    likes,
+                    tags,
+                    comments,
+                    seotitle,
+                    seodescription,
+                    seokeywords,
+                    hidingdate,
+                    highlights,
+                    created_at,
+                    updated_at
+                FROM news
+                WHERE category_id = ? AND subcategory_id = ?
+                ORDER BY created_at DESC";
+
+    $news_stmt = $conn->prepare($news_sql);
+    $news_stmt->bind_param("ii", $category_id, $subcategory_id);
+    $news_stmt->execute();
+    $news_result = $news_stmt->get_result();
+
+    $news_list = [];
+    while ($n = $news_result->fetch_assoc()) {
+        $n["id"] = (int)$n["id"];
+        $n["category_id"] = (int)$n["category_id"];
+        $n["subcategory_id"] = (int)$n["subcategory_id"];
+        $news_list[] = $n;
+    }
+    $news_stmt->close();
+
     $subcategories[] = [
-        "id" => (int)$row["id"],
+        "id" => $subcategory_id,
         "category_id" => (int)$row["category_id"],
         "name" => $row["name"],
         "tname" => $row["tname"],
         "slug" => $row["slug"],
-        "created_at" => $row["created_at"]
+        "created_at" => $row["created_at"],
+        "news" => $news_list
     ];
 }
 
